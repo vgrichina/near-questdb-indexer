@@ -6,8 +6,8 @@ PG_URL=${PG_URL:=postgres://public_readonly:nearprotocol@104.199.89.51/mainnet_e
 set -ex
 # echo $PG_URL
 
-ROW_LIMIT=1000
-# TODO: Update query so that rows at the limit edge don't get dropped (because of timestamp filtering)
+# NOTE: This specifies number of blocks. Might need to be tuned to avoid inefficient join by Postgres (usually kicks in at around 75 limit).
+ROW_LIMIT=50
 
 LATEST_JSON=$(curl -G \
   --data-urlencode "query=select cast(ts as long), index_in_chunk from actions order by ts desc, index_in_chunk desc limit 1" \
@@ -20,10 +20,9 @@ echo "Latest: $LATEST $LATEST_TIMESTAMP $LATEST_INDEX"
 
 # | curl -F data=@- /imp << EOF
 # cat << EOF
-# time psql $PG_URL --csv > tmp.csv << EOF
-cat << EOF
+time psql $PG_URL --csv > tmp.csv << EOF
 
-select * from ( 
+select * from (
 	select
 		to_char(to_timestamp(transactions.block_timestamp / 1000000000), 'yyyy-MM-dd"T"HH24:MI:SS.US"Z"') as ts,
 		receipt_id,
@@ -40,12 +39,12 @@ select * from (
 		signer_account_id,
 		signer_public_key
 	from (
-		select * from transactions
-		where transactions.block_timestamp > $LATEST_TIMESTAMP * 1000 
-			-- or (transactions.block_timestamp / 1000 = $LATEST_TIMESTAMP and transactions.index_in_chunk > $LATEST_INDEX)
-		order by transactions.block_timestamp, transactions.index_in_chunk
+		select * from blocks
+		where blocks.block_timestamp > $LATEST_TIMESTAMP * 1000
+		order by blocks.block_timestamp
 		limit $ROW_LIMIT
-	) as transactions
+	) as blocks
+	join transactions on included_in_block_hash = block_hash
 	join receipts on originated_from_transaction_hash = transaction_hash
 	join action_receipt_actions using (receipt_id)
 ) filtered
@@ -53,5 +52,5 @@ order by ts, index_in_action_receipt
 
 EOF
 
-# time curl -F data=@tmp.csv "$QUESTDB_URL/imp?name=actions"
+time curl -F data=@tmp.csv "$QUESTDB_URL/imp?name=actions"
 
