@@ -14,9 +14,8 @@ LATEST_JSON=$(curl -G \
   "$QUESTDB_URL/exec")
 
 LATEST_TIMESTAMP=$(echo $LATEST_JSON | jq '.dataset[0][0] // 0')
-LATEST_INDEX=$(echo $LATEST_JSON | jq '.dataset[0][1] // 0')
 
-echo "Latest: $LATEST $LATEST_TIMESTAMP $LATEST_INDEX"
+echo "Latest: $LATEST $LATEST_TIMESTAMP"
 
 # | curl -F data=@- /imp << EOF
 # cat << EOF
