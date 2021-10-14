@@ -35,7 +35,7 @@ select * from (
 		receipt_id,
 		index_in_action_receipt,
 		action_kind,
-		args->>'deposit' as deposit,
+		(args->>'deposit')::numeric / 1e24 as deposit,
 		args->>'method_name' as method_name,
 		args->>'args_json' as args_json,
 		args->'args_json'->>'receiver_id' as args_receiver_id,
