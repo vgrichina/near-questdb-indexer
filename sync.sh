@@ -21,6 +21,13 @@ echo "Latest: $LATEST $LATEST_TIMESTAMP"
 # cat << EOF
 time psql $PG_URL --csv > tmp.csv << EOF
 
+with _blocks as (
+	select block_hash from blocks
+	where blocks.block_timestamp > $LATEST_TIMESTAMP
+		and (select count(*) from transactions where included_in_block_hash = block_hash) > 0
+	order by blocks.block_timestamp
+	limit $ROW_LIMIT
+)
 select * from (
 	select
 		to_char(to_timestamp(transactions.block_timestamp / 1000000000), 'yyyy-MM-dd"T"HH24:MI:SS.US"Z"') as ts,
@@ -38,12 +45,7 @@ select * from (
 		transactions.index_in_chunk,
 		signer_account_id,
 		signer_public_key
-	from (
-		select * from blocks
-		where blocks.block_timestamp > $LATEST_TIMESTAMP * 1000
-		order by blocks.block_timestamp
-		limit $ROW_LIMIT
-	) as blocks
+	from _blocks
 	join transactions on included_in_block_hash = block_hash
 	join receipts on originated_from_transaction_hash = transaction_hash
 	join action_receipt_actions using (receipt_id)
