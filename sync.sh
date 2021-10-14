@@ -10,7 +10,7 @@ set -ex
 ROW_LIMIT=50
 
 LATEST_JSON=$(curl -G \
-  --data-urlencode "query=select cast(ts as long), index_in_chunk from actions order by ts desc, index_in_chunk desc limit 1" \
+  --data-urlencode "query=select block_timestamp from actions order by ts desc limit 1" \
   "$QUESTDB_URL/exec")
 
 LATEST_TIMESTAMP=$(echo $LATEST_JSON | jq '.dataset[0][0] // 0')
@@ -25,6 +25,7 @@ time psql $PG_URL --csv > tmp.csv << EOF
 select * from (
 	select
 		to_char(to_timestamp(transactions.block_timestamp / 1000000000), 'yyyy-MM-dd"T"HH24:MI:SS.US"Z"') as ts,
+		transactions.block_timestamp as block_timestamp,
 		receipt_id,
 		index_in_action_receipt,
 		action_kind,
