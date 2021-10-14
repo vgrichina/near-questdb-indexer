@@ -52,5 +52,5 @@ order by ts, index_in_action_receipt
 
 EOF
 
-time curl -F data=@tmp.csv "$QUESTDB_URL/imp?name=actions"
+time curl -F schema=@schema.json -F data=@tmp.csv "$QUESTDB_URL/imp?name=actions&timestamp=ts&fmt=tabular"
 
