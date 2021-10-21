@@ -1,4 +1,4 @@
 [
     { "name": "action_kind", "type": "SYMBOL" },
-    { "name": "block_timestamp", "type": "LONG" }
+    { "name": "block_timestamp", "type": "STRING" }
 ]
