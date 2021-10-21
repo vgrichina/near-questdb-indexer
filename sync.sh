@@ -10,7 +10,7 @@ PG_URL=${PG_URL:=postgres://public_readonly:nearprotocol@104.199.89.51/mainnet_e
 ROW_LIMIT=3000
 
 LATEST_JSON=$(curl -G \
-  --data-urlencode "query=select block_timestamp from actions order by ts desc limit 1" \
+  --data-urlencode "query=select block_timestamp from actions cross join (select max(ts) max_ts from actions) where max_ts = ts limit 1" \
   "$QUESTDB_URL/exec")
 
 LATEST_TIMESTAMP=$(echo $LATEST_JSON | jq -r '.dataset[0][0] // 0')
